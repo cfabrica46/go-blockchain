@@ -8,6 +8,7 @@ import (
 	"log"
 	"math"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -60,7 +61,7 @@ func (bc Blockchain) proofOfWork() (newProof float64, err error) {
 			return 0, err
 		}
 
-		if hex.EncodeToString(h.Sum(nil))[:4] == "0000" {
+		if strings.HasPrefix(hex.EncodeToString(h.Sum(nil)), "0000") {
 			checkProof = true
 		} else {
 			newProof += 1
@@ -100,7 +101,7 @@ func chanValid(chain []Block) bool {
 				if err != nil {
 					return false
 				}
-				if hex.EncodeToString(h.Sum(nil))[:4] == "0000" {
+				if !strings.HasPrefix(hex.EncodeToString(h.Sum(nil)), "0000") {
 					return false
 				}
 
@@ -115,7 +116,7 @@ var blockChain = getBlockchain()
 func main() {
 	http.HandleFunc("/mine_block", mineBlock)
 	http.HandleFunc("/get_chain", getChain)
-	http.HandleFunc("/valid", valid)
+	http.HandleFunc("/valid", isValid)
 
 	log.Println("Listening on localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
@@ -170,7 +171,7 @@ func getChain(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func valid(w http.ResponseWriter, r *http.Request) {
+func isValid(w http.ResponseWriter, r *http.Request) {
 	check := chanValid(blockChain.Chain)
 	if check {
 		_, err := w.Write([]byte("VALIDADA"))
